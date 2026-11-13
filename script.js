@@ -16,6 +16,12 @@
   const vatAmountOutput = document.querySelector("#vat-amount");
   const grandTotal = document.querySelector("#grand-total");
   const dateInput = document.querySelector("#estimate-date");
+  const estimateNumberInput = document.querySelector('[name="estimate-number"]');
+  const commentInput = document.querySelector("#estimate-comment");
+  const printButton = document.querySelector("#print-estimate");
+  const printEstimateNumber = document.querySelector("#print-estimate-number");
+  const printEstimateDate = document.querySelector("#print-estimate-date");
+  const printCommentText = document.querySelector("#print-comment-text");
 
   const moneyFormatter = new Intl.NumberFormat("ru-RU", {
     maximumFractionDigits: 0
@@ -34,6 +40,26 @@
   function formatMoney(value) {
     const safeValue = Number.isFinite(value) ? Math.round(value) : 0;
     return `${moneyFormatter.format(safeValue)} ${currencySelect.value}`;
+  }
+
+  function handleNumericInput(event) {
+    const input = event.currentTarget;
+    const normalizedValue = input.value.replace(/^(-?)0+(?=\d)/, "$1");
+
+    if (normalizedValue !== input.value) {
+      input.value = normalizedValue;
+    }
+
+    recalculate();
+  }
+
+  function setupNumericInput(input) {
+    input.addEventListener("focus", () => {
+      if (input.value === "0") {
+        input.select();
+      }
+    });
+    input.addEventListener("input", handleNumericInput);
   }
 
   function recalculate() {
@@ -72,8 +98,8 @@
     const fragment = rowTemplate.content.cloneNode(true);
     const row = fragment.querySelector(".item-row");
 
-    row.querySelector(".item-quantity").addEventListener("input", recalculate);
-    row.querySelector(".item-price").addEventListener("input", recalculate);
+    setupNumericInput(row.querySelector(".item-quantity"));
+    setupNumericInput(row.querySelector(".item-price"));
     row.querySelector(".remove-item").addEventListener("click", () => {
       row.remove();
       recalculate();
@@ -104,12 +130,34 @@
     dateInput.value = `${year}-${month}-${day}`;
   }
 
+  function formatPrintDate(value) {
+    const dateParts = value.split("-");
+
+    if (dateParts.length !== 3) {
+      return "—";
+    }
+
+    return `${dateParts[2]}.${dateParts[1]}.${dateParts[0]}`;
+  }
+
+  function updatePrintDocument() {
+    printEstimateNumber.textContent = estimateNumberInput.value.trim() || "—";
+    printEstimateDate.textContent = formatPrintDate(dateInput.value);
+    printCommentText.textContent = commentInput.value.trim() || "—";
+  }
+
   addItemButton.addEventListener("click", () => addItem({ focus: true }));
-  discountRateInput.addEventListener("input", recalculate);
-  vatRateInput.addEventListener("input", recalculate);
+  setupNumericInput(discountRateInput);
+  setupNumericInput(vatRateInput);
   currencySelect.addEventListener("change", recalculate);
+  printButton.addEventListener("click", () => {
+    updatePrintDocument();
+    window.print();
+  });
+  window.addEventListener("beforeprint", updatePrintDocument);
 
   setToday();
   addItem();
   recalculate();
+  updatePrintDocument();
 })();

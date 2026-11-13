@@ -9,6 +9,10 @@
 </head>
 <body>
   <main class="page">
+    <header class="print-header print-only">
+      <h1>Смета № <span id="print-estimate-number">—</span> от <span id="print-estimate-date">—</span></h1>
+    </header>
+
     <header class="page__header">
       <h1>Смета за 5 минут</h1>
       <p>Заполните реквизиты и позиции — суммы рассчитаются автоматически.</p>
@@ -100,6 +104,21 @@
         <strong id="grand-total">0 ₸</strong>
       </div>
     </section>
+
+    <section class="card comment-card" aria-labelledby="comment-title">
+      <label class="comment-entry" for="estimate-comment">
+        <span id="comment-title">Комментарий</span>
+        <textarea id="estimate-comment" rows="4" placeholder="Сроки выполнения, условия оплаты и другие детали"></textarea>
+      </label>
+      <button id="print-estimate" class="button button--primary" type="button">Сохранить PDF</button>
+
+      <div class="print-comment print-only">
+        <h2>Комментарий</h2>
+        <p id="print-comment-text">—</p>
+      </div>
+    </section>
+
+    <p class="signature print-only">Подпись ____________________</p>
   </main>
 
   <template id="item-row-template">
