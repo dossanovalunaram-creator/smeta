@@ -4,11 +4,21 @@
   const itemsBody = document.querySelector("#items-body");
   const rowTemplate = document.querySelector("#item-row-template");
   const addItemButton = document.querySelector("#add-item");
+  const discountRateInput = document.querySelector("#discount-rate");
+  const vatRateInput = document.querySelector("#vat-rate");
+  const currencySelect = document.querySelector("#currency");
+  const subtotalOutput = document.querySelector("#subtotal");
+  const discountRow = document.querySelector("#discount-row");
+  const discountAmountOutput = document.querySelector("#discount-amount");
+  const discountedRow = document.querySelector("#discounted-row");
+  const discountedTotalOutput = document.querySelector("#discounted-total");
+  const vatRow = document.querySelector("#vat-row");
+  const vatAmountOutput = document.querySelector("#vat-amount");
   const grandTotal = document.querySelector("#grand-total");
   const dateInput = document.querySelector("#estimate-date");
 
   const moneyFormatter = new Intl.NumberFormat("ru-RU", {
-    maximumFractionDigits: 2
+    maximumFractionDigits: 0
   });
 
   function parseNumber(value) {
@@ -22,24 +32,40 @@
   }
 
   function formatMoney(value) {
-    const safeValue = Number.isFinite(value) ? value : 0;
-    return `${moneyFormatter.format(safeValue)} ₸`;
+    const safeValue = Number.isFinite(value) ? Math.round(value) : 0;
+    return `${moneyFormatter.format(safeValue)} ${currencySelect.value}`;
   }
 
   function recalculate() {
-    let total = 0;
+    let subtotal = 0;
 
     itemsBody.querySelectorAll(".item-row").forEach((row) => {
       const quantity = parseNumber(row.querySelector(".item-quantity").value);
       const price = parseNumber(row.querySelector(".item-price").value);
       const rowSum = quantity * price;
-      const safeRowSum = Number.isFinite(rowSum) ? rowSum : 0;
+      const safeRowSum = Number.isFinite(rowSum) ? Math.round(rowSum) : 0;
 
       row.querySelector(".item-sum").textContent = formatMoney(safeRowSum);
-      total += safeRowSum;
+      subtotal += safeRowSum;
     });
 
+    const discountRate = parseNumber(discountRateInput.value);
+    const vatRate = parseNumber(vatRateInput.value);
+    const discountAmount = Math.round(subtotal * discountRate / 100);
+    const discountedTotal = subtotal - discountAmount;
+    const vatAmount = Math.round(discountedTotal * vatRate / 100);
+    const total = discountedTotal + vatAmount;
+
+    subtotalOutput.textContent = formatMoney(subtotal);
+    discountAmountOutput.textContent = formatMoney(discountAmount);
+    discountedTotalOutput.textContent = formatMoney(discountedTotal);
+    vatAmountOutput.textContent = formatMoney(vatAmount);
     grandTotal.textContent = formatMoney(total);
+
+    const hasDiscount = discountAmount !== 0;
+    discountRow.hidden = !hasDiscount;
+    discountedRow.hidden = !hasDiscount;
+    vatRow.hidden = vatAmount === 0;
   }
 
   function addItem(options = {}) {
@@ -79,6 +105,9 @@
   }
 
   addItemButton.addEventListener("click", () => addItem({ focus: true }));
+  discountRateInput.addEventListener("input", recalculate);
+  vatRateInput.addEventListener("input", recalculate);
+  currencySelect.addEventListener("change", recalculate);
 
   setToday();
   addItem();

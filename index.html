@@ -54,11 +54,51 @@
         </table>
       </div>
       <button id="add-item" class="button button--secondary" type="button">+ Добавить позицию</button>
+
+      <div class="calculation-settings" aria-label="Настройки расчёта">
+        <label>
+          <span>Скидка, %</span>
+          <input id="discount-rate" type="text" inputmode="decimal" value="0" aria-describedby="discount-hint">
+          <span id="discount-hint" class="visually-hidden">Процент скидки от суммы позиций</span>
+        </label>
+        <label>
+          <span>НДС, %</span>
+          <input id="vat-rate" type="text" inputmode="decimal" value="0" aria-describedby="vat-hint">
+          <span id="vat-hint" class="visually-hidden">Процент НДС от суммы со скидкой</span>
+        </label>
+        <label>
+          <span>Валюта</span>
+          <select id="currency" aria-label="Валюта сметы">
+            <option value="₸">₸</option>
+            <option value="₽">₽</option>
+            <option value="$">$</option>
+            <option value="€">€</option>
+          </select>
+        </label>
+      </div>
     </section>
 
     <section class="total-card" aria-live="polite" aria-atomic="true">
-      <span>Итого к оплате</span>
-      <strong id="grand-total">0 ₸</strong>
+      <div class="total-row">
+        <span>Сумма</span>
+        <strong id="subtotal">0 ₸</strong>
+      </div>
+      <div id="discount-row" class="total-row" hidden>
+        <span>Скидка</span>
+        <strong id="discount-amount">0 ₸</strong>
+      </div>
+      <div id="discounted-row" class="total-row" hidden>
+        <span>Сумма со скидкой</span>
+        <strong id="discounted-total">0 ₸</strong>
+      </div>
+      <div id="vat-row" class="total-row" hidden>
+        <span>НДС</span>
+        <strong id="vat-amount">0 ₸</strong>
+      </div>
+      <div class="total-row total-row--grand">
+        <span>Итого к оплате</span>
+        <strong id="grand-total">0 ₸</strong>
+      </div>
     </section>
   </main>
 
