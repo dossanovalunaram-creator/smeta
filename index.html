@@ -110,7 +110,19 @@
         <span id="comment-title">Комментарий</span>
         <textarea id="estimate-comment" rows="4" placeholder="Сроки выполнения, условия оплаты и другие детали"></textarea>
       </label>
-      <button id="print-estimate" class="button button--primary" type="button">Сохранить PDF</button>
+      <div class="document-actions">
+        <button id="print-estimate" class="button button--primary" type="button">Сохранить PDF</button>
+        <button id="copy-estimate" class="button button--secondary" type="button">Скопировать для WhatsApp</button>
+        <button id="new-estimate" class="button button--secondary" type="button">Новая смета</button>
+      </div>
+
+      <p id="copy-status" class="copy-status" role="status" hidden>Скопировано ✓</p>
+      <div id="copy-fallback" class="copy-feedback" hidden>
+        <label for="copy-text">
+          <span>Скопируйте текст вручную</span>
+          <textarea id="copy-text" rows="8" readonly></textarea>
+        </label>
+      </div>
 
       <div class="print-comment print-only">
         <h2>Комментарий</h2>

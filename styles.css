@@ -242,6 +242,32 @@ td {
   margin-top: 16px;
 }
 
+.document-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.document-actions .button {
+  flex: 1 1 190px;
+  margin-top: 0;
+}
+
+.copy-status {
+  margin: 14px 0 0;
+  color: #16794a;
+  font-weight: 700;
+}
+
+.copy-feedback {
+  margin-top: 16px;
+}
+
+.copy-feedback textarea {
+  min-height: 180px;
+}
+
 .print-only {
   display: none;
 }
@@ -438,10 +464,13 @@ justify-content: stretch;
 
   .page__header,
   .button,
+  .document-actions,
   .calculation-settings,
   .remove-cell,
   th:last-child,
-  .comment-entry {
+  .comment-entry,
+  .copy-feedback,
+  .copy-status {
     display: none !important;
   }
 

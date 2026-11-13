@@ -2,6 +2,7 @@
   "use strict";
 
   const itemsBody = document.querySelector("#items-body");
+  const page = document.querySelector(".page");
   const rowTemplate = document.querySelector("#item-row-template");
   const addItemButton = document.querySelector("#add-item");
   const discountRateInput = document.querySelector("#discount-rate");
@@ -16,9 +17,16 @@
   const vatAmountOutput = document.querySelector("#vat-amount");
   const grandTotal = document.querySelector("#grand-total");
   const dateInput = document.querySelector("#estimate-date");
+  const senderInput = document.querySelector('[name="sender"]');
+  const recipientInput = document.querySelector('[name="recipient"]');
   const estimateNumberInput = document.querySelector('[name="estimate-number"]');
   const commentInput = document.querySelector("#estimate-comment");
   const printButton = document.querySelector("#print-estimate");
+  const copyButton = document.querySelector("#copy-estimate");
+  const newEstimateButton = document.querySelector("#new-estimate");
+  const copyStatus = document.querySelector("#copy-status");
+  const copyFallback = document.querySelector("#copy-fallback");
+  const copyText = document.querySelector("#copy-text");
   const printEstimateNumber = document.querySelector("#print-estimate-number");
   const printEstimateDate = document.querySelector("#print-estimate-date");
   const printCommentText = document.querySelector("#print-comment-text");
@@ -26,6 +34,11 @@
   const moneyFormatter = new Intl.NumberFormat("ru-RU", {
     maximumFractionDigits: 0
   });
+  const quantityFormatter = new Intl.NumberFormat("ru-RU", {
+    maximumFractionDigits: 2
+  });
+  const STORAGE_KEY = "estimate-draft-v1";
+  let copyStatusTimer;
 
   function parseNumber(value) {
     const normalized = String(value)
@@ -40,6 +53,11 @@
   function formatMoney(value) {
     const safeValue = Number.isFinite(value) ? Math.round(value) : 0;
     return `${moneyFormatter.format(safeValue)} ${currencySelect.value}`;
+  }
+
+  function formatQuantity(value) {
+    const safeValue = Number.isFinite(value) ? value : 0;
+    return quantityFormatter.format(safeValue);
   }
 
   function handleNumericInput(event) {
@@ -97,12 +115,27 @@
   function addItem(options = {}) {
     const fragment = rowTemplate.content.cloneNode(true);
     const row = fragment.querySelector(".item-row");
+    const values = options.values || {};
+    const nameInput = row.querySelector(".item-name");
+    const quantityInput = row.querySelector(".item-quantity");
+    const unitInput = row.querySelector(".item-unit");
+    const priceInput = row.querySelector(".item-price");
 
-    setupNumericInput(row.querySelector(".item-quantity"));
-    setupNumericInput(row.querySelector(".item-price"));
+    nameInput.value = typeof values.name === "string" ? values.name : "";
+    quantityInput.value = typeof values.quantity === "string" ? values.quantity : "";
+    priceInput.value = typeof values.price === "string" ? values.price : "";
+    unitInput.value = typeof values.unit === "string" ? values.unit : unitInput.options[0].value;
+
+    if (!unitInput.value) {
+      unitInput.value = unitInput.options[0].value;
+    }
+
+    setupNumericInput(quantityInput);
+    setupNumericInput(priceInput);
     row.querySelector(".remove-item").addEventListener("click", () => {
       row.remove();
       recalculate();
+      saveDraft();
     });
 
     row.addEventListener("keydown", (event) => {
@@ -112,13 +145,14 @@
       if (event.key === "Enter" && isLastRow && !isInteractiveChoice) {
         event.preventDefault();
         addItem({ focus: true });
+        saveDraft();
       }
     });
 
     itemsBody.appendChild(fragment);
 
     if (options.focus) {
-      row.querySelector(".item-name").focus();
+      nameInput.focus();
     }
   }
 
@@ -146,7 +180,197 @@
     printCommentText.textContent = commentInput.value.trim() || "—";
   }
 
-  addItemButton.addEventListener("click", () => addItem({ focus: true }));
+  function getDraftData() {
+    const items = Array.from(itemsBody.querySelectorAll(".item-row"), (row) => ({
+      name: row.querySelector(".item-name").value,
+      quantity: row.querySelector(".item-quantity").value,
+      unit: row.querySelector(".item-unit").value,
+      price: row.querySelector(".item-price").value
+    }));
+
+    return {
+      sender: senderInput.value,
+      recipient: recipientInput.value,
+      estimateNumber: estimateNumberInput.value,
+      date: dateInput.value,
+      discountRate: discountRateInput.value,
+      vatRate: vatRateInput.value,
+      currency: currencySelect.value,
+      comment: commentInput.value,
+      items
+    };
+  }
+
+  function saveDraft() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(getDraftData()));
+    } catch (error) {
+      // Приложение продолжает работать, даже если хранилище браузера недоступно.
+    }
+  }
+
+  function restoreDraft() {
+    let draft;
+
+    try {
+      const savedDraft = localStorage.getItem(STORAGE_KEY);
+
+      if (!savedDraft) {
+        return false;
+      }
+
+      draft = JSON.parse(savedDraft);
+    } catch (error) {
+      return false;
+    }
+
+    if (!draft || typeof draft !== "object") {
+      return false;
+    }
+
+    senderInput.value = typeof draft.sender === "string" ? draft.sender : "";
+    recipientInput.value = typeof draft.recipient === "string" ? draft.recipient : "";
+    estimateNumberInput.value = typeof draft.estimateNumber === "string" ? draft.estimateNumber : "";
+    dateInput.value = typeof draft.date === "string" ? draft.date : "";
+    discountRateInput.value = typeof draft.discountRate === "string" ? draft.discountRate : "0";
+    vatRateInput.value = typeof draft.vatRate === "string" ? draft.vatRate : "0";
+    commentInput.value = typeof draft.comment === "string" ? draft.comment : "";
+
+    if (typeof draft.currency === "string") {
+      currencySelect.value = draft.currency;
+    }
+
+    if (!currencySelect.value) {
+      currencySelect.selectedIndex = 0;
+    }
+
+    itemsBody.replaceChildren();
+
+    if (Array.isArray(draft.items) && draft.items.length > 0) {
+      draft.items.forEach((item) => addItem({ values: item }));
+    } else {
+      addItem();
+    }
+
+    return true;
+  }
+
+  function getNextEstimateNumber(value) {
+    const currentNumber = value.trim();
+    const numberParts = currentNumber.match(/^(.*?)(\d+)$/);
+
+    if (!numberParts) {
+      return "1";
+    }
+
+    const prefix = numberParts[1];
+    const digits = numberParts[2];
+    const nextNumber = Number(digits) + 1;
+
+    if (!Number.isSafeInteger(nextNumber)) {
+      return "1";
+    }
+
+    return `${prefix}${String(nextNumber).padStart(digits.length, "0")}`;
+  }
+
+  function createNewEstimate() {
+    const confirmed = window.confirm("Очистить текущую смету и создать новую?");
+
+    if (!confirmed) {
+      return;
+    }
+
+    const nextEstimateNumber = getNextEstimateNumber(estimateNumberInput.value);
+
+    senderInput.value = "";
+    recipientInput.value = "";
+    estimateNumberInput.value = nextEstimateNumber;
+    discountRateInput.value = "0";
+    vatRateInput.value = "0";
+    currencySelect.selectedIndex = 0;
+    commentInput.value = "";
+    itemsBody.replaceChildren();
+    addItem();
+    setToday();
+    copyStatus.hidden = true;
+    copyFallback.hidden = true;
+    recalculate();
+    updatePrintDocument();
+    saveDraft();
+    senderInput.focus();
+  }
+
+  function buildShareText() {
+    const estimateNumber = estimateNumberInput.value.trim() || "—";
+    const lines = [`Смета № ${estimateNumber} от ${formatPrintDate(dateInput.value)}`];
+
+    itemsBody.querySelectorAll(".item-row").forEach((row) => {
+      const name = row.querySelector(".item-name").value.trim();
+      const quantityValue = row.querySelector(".item-quantity").value;
+      const priceValue = row.querySelector(".item-price").value;
+
+      if (!name && !quantityValue.trim() && !priceValue.trim()) {
+        return;
+      }
+
+      const quantity = parseNumber(quantityValue);
+      const price = parseNumber(priceValue);
+      const unit = row.querySelector(".item-unit").value;
+      const rowSum = Math.round(quantity * price);
+
+      lines.push(`• ${name || "Без названия"} — ${formatQuantity(quantity)} ${unit} × ${formatMoney(price)} = ${formatMoney(rowSum)}`);
+    });
+
+    if (!discountRow.hidden) {
+      lines.push(`Скидка ${formatQuantity(parseNumber(discountRateInput.value))}%: ${discountAmountOutput.textContent}`);
+    }
+
+    if (!vatRow.hidden) {
+      lines.push(`НДС ${formatQuantity(parseNumber(vatRateInput.value))}%: ${vatAmountOutput.textContent}`);
+    }
+
+    lines.push(`Итого к оплате: ${grandTotal.textContent}`);
+    return lines.join("\n");
+  }
+
+  function showCopySuccess() {
+    window.clearTimeout(copyStatusTimer);
+    copyFallback.hidden = true;
+    copyStatus.hidden = false;
+    copyStatusTimer = window.setTimeout(() => {
+      copyStatus.hidden = true;
+    }, 2000);
+  }
+
+  function showCopyFallback(text) {
+    window.clearTimeout(copyStatusTimer);
+    copyStatus.hidden = true;
+    copyText.value = text;
+    copyFallback.hidden = false;
+    copyText.focus();
+    copyText.select();
+  }
+
+  async function copyEstimate() {
+    const shareText = buildShareText();
+
+    try {
+      if (!navigator.clipboard || typeof navigator.clipboard.writeText !== "function") {
+        throw new Error("Clipboard API is unavailable");
+      }
+
+      await navigator.clipboard.writeText(shareText);
+      showCopySuccess();
+    } catch (error) {
+      showCopyFallback(shareText);
+    }
+  }
+
+  addItemButton.addEventListener("click", () => {
+    addItem({ focus: true });
+    saveDraft();
+  });
   setupNumericInput(discountRateInput);
   setupNumericInput(vatRateInput);
   currencySelect.addEventListener("change", recalculate);
@@ -154,10 +378,17 @@
     updatePrintDocument();
     window.print();
   });
+  copyButton.addEventListener("click", copyEstimate);
+  newEstimateButton.addEventListener("click", createNewEstimate);
+  page.addEventListener("input", saveDraft);
+  page.addEventListener("change", saveDraft);
   window.addEventListener("beforeprint", updatePrintDocument);
 
-  setToday();
-  addItem();
+  if (!restoreDraft()) {
+    setToday();
+    addItem();
+  }
+
   recalculate();
   updatePrintDocument();
 })();
