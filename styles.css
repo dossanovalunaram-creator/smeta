@@ -352,6 +352,8 @@ justify-content: stretch;
   }
 
   .positions-card {
+    width: 100%;
+    max-width: 100%;
     padding: 18px 12px;
     background: transparent;
     border: 0;
@@ -363,6 +365,8 @@ justify-content: stretch;
   }
 
   .table-wrap {
+    width: 100%;
+    max-width: 100%;
     overflow: visible;
   }
 
@@ -379,8 +383,10 @@ justify-content: stretch;
   }
 
   .item-row {
+    max-width: 100%;
     margin-bottom: 14px;
     padding: 14px;
+    overflow: hidden;
     border: 1px solid #e5eaf2;
     border-radius: 14px;
     background: var(--surface);
@@ -388,10 +394,10 @@ justify-content: stretch;
   }
 
   td {
-    display: grid;
-    grid-template-columns: minmax(96px, 0.42fr) minmax(0, 1fr);
-    align-items: center;
-    gap: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
     padding: 6px 0;
     border: 0;
   }
@@ -403,6 +409,20 @@ justify-content: stretch;
     font-weight: 700;
   }
 
+  input,
+  select,
+  textarea {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .item-sum {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
   .remove-cell {
     text-align: left;
   }
@@ -411,25 +431,52 @@ justify-content: stretch;
     border: 1px solid #f0d5d5;
   }
 
-  .button--secondary {
+  .button {
     width: 100%;
+    max-width: 100%;
     margin-top: 2px;
+  }
+
+  .document-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .document-actions .button {
+    width: 100%;
   }
 
   .calculation-settings {
     display: grid;
-    grid-template-columns: repeat(3, minmax(180px, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: 16px;
-    align-items: end;
+    align-items: stretch;
     width: 100%;
-}
+    max-width: 100%;
+  }
+
+  .calculation-settings label {
+    min-width: 0;
+  }
 
   .total-card {
+    width: 100%;
+    max-width: 100%;
     padding: 22px;
+    overflow: hidden;
   }
 
   .total-row {
-    align-items: flex-start;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+
+  .total-row strong {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 }
 
