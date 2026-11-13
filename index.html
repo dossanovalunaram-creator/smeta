@@ -57,7 +57,40 @@
           <tbody id="items-body"></tbody>
         </table>
       </div>
-      <button id="add-item" class="button button--secondary" type="button">+ Добавить позицию</button>
+      <div class="position-actions">
+        <button id="add-item" class="button button--secondary" type="button">+ Добавить позицию</button>
+        <button id="toggle-catalog" class="button button--secondary" type="button" aria-expanded="false" aria-controls="service-catalog">Каталог услуг</button>
+      </div>
+
+      <section id="service-catalog" class="catalog-panel" aria-labelledby="catalog-title" hidden>
+        <div class="catalog-header">
+          <h3 id="catalog-title">Каталог услуг</h3>
+          <button id="close-catalog" class="catalog-close" type="button" aria-label="Закрыть каталог">×</button>
+        </div>
+
+        <form id="catalog-form" class="catalog-form">
+          <label>
+            <span>Название услуги</span>
+            <input id="catalog-name" type="text" required placeholder="Например, консультация">
+          </label>
+          <label>
+            <span>Единица</span>
+            <select id="catalog-unit">
+              <option value="шт">шт</option>
+              <option value="час">час</option>
+              <option value="услуга">услуга</option>
+            </select>
+          </label>
+          <label>
+            <span>Цена</span>
+            <input id="catalog-price" type="text" inputmode="decimal" placeholder="0">
+          </label>
+          <button class="button button--primary" type="submit">Добавить услугу</button>
+        </form>
+
+        <p id="catalog-empty" class="catalog-empty">Пока нет сохранённых услуг.</p>
+        <ul id="catalog-list" class="catalog-list" aria-label="Сохранённые услуги"></ul>
+      </section>
 
       <div class="calculation-settings" aria-label="Настройки расчёта">
         <label>

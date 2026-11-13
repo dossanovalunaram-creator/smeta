@@ -5,6 +5,15 @@
   const page = document.querySelector(".page");
   const rowTemplate = document.querySelector("#item-row-template");
   const addItemButton = document.querySelector("#add-item");
+  const toggleCatalogButton = document.querySelector("#toggle-catalog");
+  const closeCatalogButton = document.querySelector("#close-catalog");
+  const catalogPanel = document.querySelector("#service-catalog");
+  const catalogForm = document.querySelector("#catalog-form");
+  const catalogNameInput = document.querySelector("#catalog-name");
+  const catalogUnitInput = document.querySelector("#catalog-unit");
+  const catalogPriceInput = document.querySelector("#catalog-price");
+  const catalogEmpty = document.querySelector("#catalog-empty");
+  const catalogList = document.querySelector("#catalog-list");
   const discountRateInput = document.querySelector("#discount-rate");
   const vatRateInput = document.querySelector("#vat-rate");
   const currencySelect = document.querySelector("#currency");
@@ -38,7 +47,9 @@
     maximumFractionDigits: 2
   });
   const STORAGE_KEY = "estimate-draft-v1";
+  const CATALOG_STORAGE_KEY = "estimate-service-catalog-v1";
   let copyStatusTimer;
+  let services = [];
 
   function parseNumber(value) {
     const normalized = String(value)
@@ -154,6 +165,8 @@
     if (options.focus) {
       nameInput.focus();
     }
+
+    return row;
   }
 
   function setToday() {
@@ -178,6 +191,142 @@
     printEstimateNumber.textContent = estimateNumberInput.value.trim() || "—";
     printEstimateDate.textContent = formatPrintDate(dateInput.value);
     printCommentText.textContent = commentInput.value.trim() || "—";
+  }
+
+  function createServiceId() {
+    return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
+  }
+
+  function saveServiceCatalog() {
+    try {
+      localStorage.setItem(CATALOG_STORAGE_KEY, JSON.stringify(services));
+    } catch (error) {
+      // Каталог остаётся доступен до закрытия страницы, если хранилище недоступно.
+    }
+  }
+
+  function loadServiceCatalog() {
+    try {
+      const savedCatalog = JSON.parse(localStorage.getItem(CATALOG_STORAGE_KEY) || "[]");
+
+      if (!Array.isArray(savedCatalog)) {
+        return;
+      }
+
+      services = savedCatalog
+        .filter((service) => service && typeof service.name === "string" && service.name.trim())
+        .map((service) => {
+          const allowedUnits = ["шт", "час", "услуга"];
+          const price = Number(service.price);
+
+          return {
+            id: typeof service.id === "string" ? service.id : createServiceId(),
+            name: service.name.trim(),
+            unit: allowedUnits.includes(service.unit) ? service.unit : "шт",
+            price: Number.isFinite(price) ? price : 0
+          };
+        });
+    } catch (error) {
+      services = [];
+    }
+  }
+
+  function addServiceToEstimate(service) {
+    const row = addItem({
+      values: {
+        name: service.name,
+        quantity: "1",
+        unit: service.unit,
+        price: moneyFormatter.format(service.price)
+      }
+    });
+
+    recalculate();
+    saveDraft();
+    row.querySelector(".item-quantity").focus();
+    row.querySelector(".item-quantity").select();
+  }
+
+  function removeService(serviceId) {
+    const service = services.find((item) => item.id === serviceId);
+
+    if (!service || !window.confirm(`Удалить услугу «${service.name}» из каталога?`)) {
+      return;
+    }
+
+    services = services.filter((item) => item.id !== serviceId);
+    saveServiceCatalog();
+    renderServiceCatalog();
+  }
+
+  function renderServiceCatalog() {
+    catalogList.replaceChildren();
+    catalogEmpty.hidden = services.length > 0;
+
+    services.forEach((service) => {
+      const item = document.createElement("li");
+      const info = document.createElement("div");
+      const name = document.createElement("strong");
+      const details = document.createElement("span");
+      const actions = document.createElement("div");
+      const useButton = document.createElement("button");
+      const removeButton = document.createElement("button");
+
+      item.className = "catalog-item";
+      info.className = "catalog-service-info";
+      actions.className = "catalog-item-actions";
+      name.textContent = service.name;
+      details.textContent = `${service.unit} · ${formatMoney(service.price)}`;
+
+      useButton.className = "button button--secondary";
+      useButton.type = "button";
+      useButton.textContent = "Добавить в смету";
+      useButton.addEventListener("click", () => addServiceToEstimate(service));
+
+      removeButton.className = "remove-service";
+      removeButton.type = "button";
+      removeButton.setAttribute("aria-label", `Удалить услугу ${service.name}`);
+      removeButton.textContent = "×";
+      removeButton.addEventListener("click", () => removeService(service.id));
+
+      info.append(name, details);
+      actions.append(useButton, removeButton);
+      item.append(info, actions);
+      catalogList.append(item);
+    });
+  }
+
+  function setCatalogOpen(isOpen) {
+    catalogPanel.hidden = !isOpen;
+    toggleCatalogButton.setAttribute("aria-expanded", String(isOpen));
+
+    if (isOpen) {
+      catalogNameInput.focus();
+    } else {
+      toggleCatalogButton.focus();
+    }
+  }
+
+  function addService(event) {
+    event.preventDefault();
+    const name = catalogNameInput.value.trim();
+
+    if (!name) {
+      catalogNameInput.focus();
+      return;
+    }
+
+    services.push({
+      id: createServiceId(),
+      name,
+      unit: catalogUnitInput.value,
+      price: parseNumber(catalogPriceInput.value)
+    });
+
+    saveServiceCatalog();
+    renderServiceCatalog();
+    catalogForm.reset();
+    catalogNameInput.focus();
   }
 
   function getDraftData() {
@@ -371,9 +520,14 @@
     addItem({ focus: true });
     saveDraft();
   });
+  toggleCatalogButton.addEventListener("click", () => setCatalogOpen(catalogPanel.hidden));
+  closeCatalogButton.addEventListener("click", () => setCatalogOpen(false));
+  catalogForm.addEventListener("submit", addService);
   setupNumericInput(discountRateInput);
   setupNumericInput(vatRateInput);
+  setupNumericInput(catalogPriceInput);
   currencySelect.addEventListener("change", recalculate);
+  currencySelect.addEventListener("change", renderServiceCatalog);
   printButton.addEventListener("click", () => {
     updatePrintDocument();
     window.print();
@@ -382,6 +536,11 @@
   newEstimateButton.addEventListener("click", createNewEstimate);
   page.addEventListener("input", saveDraft);
   page.addEventListener("change", saveDraft);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !catalogPanel.hidden) {
+      setCatalogOpen(false);
+    }
+  });
   window.addEventListener("beforeprint", updatePrintDocument);
 
   if (!restoreDraft()) {
@@ -391,4 +550,6 @@
 
   recalculate();
   updatePrintDocument();
+  loadServiceCatalog();
+  renderServiceCatalog();
 })();

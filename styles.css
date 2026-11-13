@@ -234,6 +234,118 @@ td {
   background: var(--accent-dark);
 }
 
+.position-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.position-actions .button {
+  margin-top: 0;
+}
+
+.catalog-panel {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #f8faff;
+}
+
+.catalog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.catalog-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.catalog-close,
+.remove-service {
+  width: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 9px;
+  color: var(--danger);
+  background: transparent;
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
+.catalog-close:hover,
+.remove-service:hover {
+  background: #fff0f0;
+}
+
+.catalog-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  align-items: end;
+  gap: 12px;
+}
+
+.catalog-form .button {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.catalog-empty {
+  margin: 18px 0 0;
+  color: var(--muted);
+}
+
+.catalog-list {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.catalog-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid #e1e7f0;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.catalog-service-info {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.catalog-service-info strong {
+  overflow-wrap: anywhere;
+}
+
+.catalog-service-info span {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.catalog-item-actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.catalog-item-actions .button {
+  margin: 0;
+}
+
 .comment-card {
   margin-top: 20px;
 }
@@ -447,6 +559,37 @@ justify-content: stretch;
     width: 100%;
   }
 
+  .position-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .position-actions .button {
+    width: 100%;
+  }
+
+  .catalog-panel {
+    width: 100%;
+    max-width: 100%;
+    padding: 14px;
+  }
+
+  .catalog-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .catalog-item {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .catalog-item-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px;
+    width: 100%;
+  }
+
   .calculation-settings {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -512,6 +655,8 @@ justify-content: stretch;
   .page__header,
   .button,
   .document-actions,
+  .position-actions,
+  .catalog-panel,
   .calculation-settings,
   .remove-cell,
   th:last-child,
