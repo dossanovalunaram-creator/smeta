@@ -534,6 +534,21 @@ td:last-child {
   font-size: clamp(1.8rem, 5vw, 2.55rem);
   letter-spacing: -0.035em;
 }
+.amount-in-words {
+  position: relative;
+  z-index: 1;
+  margin: 12px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  color: #d9e5f3;
+  font-size: 0.94rem;
+  line-height: 1.5;
+}
+
+.amount-in-words span {
+  color: #fff;
+  font-weight: 650;
+}
 
 .comment-card {
   margin-top: 20px;
@@ -820,6 +835,9 @@ td:last-child {
     max-width: 100%;
     text-align: left;
   }
+  .amount-in-words {
+    overflow-wrap: anywhere;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1046,6 +1064,17 @@ td:last-child {
   .total-row--grand strong {
     color: #123a70;
     font-size: 14pt;
+  }
+  .amount-in-words {
+    margin-top: 2.5mm;
+    padding-top: 2.5mm;
+    border-color: #d2dae7;
+    color: #5a6678;
+    font-size: 9pt;
+  }
+
+  .amount-in-words span {
+    color: #15243a;
   }
 
   .comment-card {

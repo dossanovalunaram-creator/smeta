@@ -25,6 +25,8 @@
   const vatRow = document.querySelector("#vat-row");
   const vatAmountOutput = document.querySelector("#vat-amount");
   const grandTotal = document.querySelector("#grand-total");
+  const amountInWordsRow = document.querySelector("#amount-in-words-row");
+  const amountInWordsOutput = document.querySelector("#amount-in-words");
   const dateInput = document.querySelector("#estimate-date");
   const senderInput = document.querySelector('[name="sender"]');
   const recipientInput = document.querySelector('[name="recipient"]');
@@ -69,6 +71,81 @@
   function formatQuantity(value) {
     const safeValue = Number.isFinite(value) ? value : 0;
     return quantityFormatter.format(safeValue);
+  }
+
+  function getPluralForm(value, forms) {
+    const lastTwoDigits = value % 100;
+    const lastDigit = value % 10;
+
+    if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
+      return forms[2];
+    }
+
+    if (lastDigit === 1) {
+      return forms[0];
+    }
+
+    if (lastDigit >= 2 && lastDigit <= 4) {
+      return forms[1];
+    }
+
+    return forms[2];
+  }
+
+  function tripletToWords(value, feminine) {
+    const hundreds = ["", "сто", "двести", "триста", "четыреста", "пятьсот", "шестьсот", "семьсот", "восемьсот", "девятьсот"];
+    const tens = ["", "", "двадцать", "тридцать", "сорок", "пятьдесят", "шестьдесят", "семьдесят", "восемьдесят", "девяносто"];
+    const teens = ["десять", "одиннадцать", "двенадцать", "тринадцать", "четырнадцать", "пятнадцать", "шестнадцать", "семнадцать", "восемнадцать", "девятнадцать"];
+    const masculineOnes = ["", "один", "два", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять"];
+    const feminineOnes = ["", "одна", "две", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять"];
+    const words = [];
+    const lastTwoDigits = value % 100;
+
+    if (Math.floor(value / 100) > 0) {
+      words.push(hundreds[Math.floor(value / 100)]);
+    }
+
+    if (lastTwoDigits >= 10 && lastTwoDigits <= 19) {
+      words.push(teens[lastTwoDigits - 10]);
+    } else {
+      if (Math.floor(lastTwoDigits / 10) > 0) {
+        words.push(tens[Math.floor(lastTwoDigits / 10)]);
+      }
+
+      if (lastTwoDigits % 10 > 0) {
+        words.push((feminine ? feminineOnes : masculineOnes)[lastTwoDigits % 10]);
+      }
+    }
+
+    return words;
+  }
+
+  function amountToWords(value) {
+    const amount = Math.min(Math.max(Math.round(value), 0), 999999999);
+    const groups = [
+      { divisor: 1000000, forms: ["миллион", "миллиона", "миллионов"], feminine: false },
+      { divisor: 1000, forms: ["тысяча", "тысячи", "тысяч"], feminine: true },
+      { divisor: 1, forms: null, feminine: false }
+    ];
+    const words = [];
+
+    groups.forEach((group) => {
+      const groupValue = Math.floor(amount / group.divisor) % 1000;
+
+      if (groupValue === 0) {
+        return;
+      }
+
+      words.push(...tripletToWords(groupValue, group.feminine));
+
+      if (group.forms) {
+        words.push(getPluralForm(groupValue, group.forms));
+      }
+    });
+
+    words.push("тенге");
+    const text = words.join(" ");
+    return text.charAt(0).toUpperCase() + text.slice(1);
   }
 
   function handleNumericInput(event) {
@@ -116,6 +193,10 @@
     discountedTotalOutput.textContent = formatMoney(discountedTotal);
     vatAmountOutput.textContent = formatMoney(vatAmount);
     grandTotal.textContent = formatMoney(total);
+
+    const showAmountInWords = currencySelect.value === "₸" && total > 0;
+    amountInWordsRow.hidden = !showAmountInWords;
+    amountInWordsOutput.textContent = showAmountInWords ? amountToWords(total) : "";
 
     const hasDiscount = discountAmount !== 0;
     discountRow.hidden = !hasDiscount;
@@ -480,6 +561,11 @@
     }
 
     lines.push(`Итого к оплате: ${grandTotal.textContent}`);
+
+    if (!amountInWordsRow.hidden) {
+      lines.push(`Сумма прописью: ${amountInWordsOutput.textContent}`);
+    }
+
     return lines.join("\n");
   }
 
